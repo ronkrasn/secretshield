@@ -57,6 +57,7 @@ else
     rm -rf "${TARGET_DIR}"
     git clone --depth 1 https://github.com/ronkrasn/secretshield.git "${TARGET_DIR}"
     ln -sf "${TARGET_DIR}/bin/secretshield" "${BIN_DIR}/secretshield"
+    python3 -m pip install --quiet -e "${TARGET_DIR}" 2>/dev/null || true
 fi
 
 # Ensure ~/.local/bin is in PATH reminder
