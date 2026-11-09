@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Publish / Sync SecretShield Homebrew Tap Repository
 # Usage: ./scripts/publish-tap.sh [github_username] [version] [--dry-run]
-# Example: ./scripts/publish-tap.sh ronkrasnopolski 0.1.0
+# Example: ./scripts/publish-tap.sh ronkrasn 0.1.0
 
 set -euo pipefail
 
@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 FORMULA_SOURCE="${REPO_ROOT}/Formula/secretshield.rb"
 
-USERNAME="${1:-ronkrasnopolski}"
+USERNAME="${1:-ronkrasn}"
 DRY_RUN=0
 
 # Parse arguments
@@ -67,23 +67,23 @@ cp "${FORMULA_SOURCE}" "${TEMP_DIR}/Formula/secretshield.rb"
 cat << 'EOF' > "${TEMP_DIR}/README.md"
 # Homebrew Tap for SecretShield 🛡️
 
-Official Homebrew tap for [SecretShield](https://github.com/ronkrasnopolski/secretshield) — Zero-Expose Git Guard & Automated Cloud Key Vault Remediation Agent.
+Official Homebrew tap for [SecretShield](https://github.com/ronkrasn/secretshield) — Zero-Expose Git Guard & Automated Cloud Key Vault Remediation Agent.
 
 ## Installation
 
 ```bash
-brew tap ronkrasnopolski/secretshield
+brew tap ronkrasn/secretshield
 brew install secretshield
 ```
 
 Or install in a single command:
 ```bash
-brew install ronkrasnopolski/secretshield/secretshield
+brew install ronkrasn/secretshield/secretshield
 ```
 
 ## Documentation
 
-See the main [SecretShield Repository](https://github.com/ronkrasnopolski/secretshield) for full usage instructions and key vault integrations.
+See the main [SecretShield Repository](https://github.com/ronkrasn/secretshield) for full usage instructions and key vault integrations.
 EOF
 
 # Git commit and push instructions

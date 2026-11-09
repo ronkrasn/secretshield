@@ -16,7 +16,7 @@ else
     VERSION=$(grep -E '^version\s*=\s*' "${REPO_ROOT}/pyproject.toml" | head -n 1 | sed -E 's/version\s*=\s*"([^"]+)".*/\1/')
 fi
 
-REPO="${2:-ronkrasnopolski/secretshield}"
+REPO="${2:-ronkrasn/secretshield}"
 TAG="v${VERSION}"
 TARBALL_URL="https://github.com/${REPO}/archive/refs/tags/${TAG}.tar.gz"
 

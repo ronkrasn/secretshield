@@ -66,11 +66,11 @@ flowchart TD
 ### Option 1: Install with Homebrew (Recommended for macOS & Linux)
 ```bash
 # Add Homebrew Tap and install
-brew tap ronkrasnopolski/secretshield
+brew tap ronkrasn/secretshield
 brew install secretshield
 
 # Or install in a single command:
-brew install ronkrasnopolski/secretshield/secretshield
+brew install ronkrasn/secretshield/secretshield
 
 # To install from local source formula:
 brew install --formula Formula/secretshield.rb
@@ -78,12 +78,12 @@ brew install --formula Formula/secretshield.rb
 
 ### Option 2: One-Line Install Script
 ```bash
-curl -sSL https://raw.githubusercontent.com/ronkrasnopolski/secretshield/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/ronkrasn/secretshield/main/install.sh | bash
 ```
 
 ### Option 3: Clone & Local Setup
 ```bash
-git clone https://github.com/ronkrasnopolski/secretshield.git
+git clone https://github.com/ronkrasn/secretshield.git
 cd secretshield
 
 # Run setup wizard in any repository:

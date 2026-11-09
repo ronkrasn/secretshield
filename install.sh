@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SecretShield One-Line Installer & Setup Script
-# Usage: curl -sSL https://raw.githubusercontent.com/username/secretshield/main/install.sh | bash
+# Usage: curl -sSL https://raw.githubusercontent.com/ronkrasn/secretshield/main/install.sh | bash
 #    or: ./install.sh
 
 set -euo pipefail
@@ -55,7 +55,7 @@ elif [ -f "${SCRIPT_DIR}/pyproject.toml" ]; then
 else
     echo -e "  Cloning latest SecretShield repository to ${TARGET_DIR}..."
     rm -rf "${TARGET_DIR}"
-    git clone --depth 1 https://github.com/ronkrasnopolski/secretshield.git "${TARGET_DIR}"
+    git clone --depth 1 https://github.com/ronkrasn/secretshield.git "${TARGET_DIR}"
     ln -sf "${TARGET_DIR}/bin/secretshield" "${BIN_DIR}/secretshield"
 fi
 

@@ -7,11 +7,11 @@ This document outlines the step-by-step process for making SecretShield public o
 ## 1. Initial Public Repository Setup
 
 1. **Create the public repository on GitHub**:
-   - URL: `https://github.com/ronkrasnopolski/secretshield` (Public)
+   - URL: `https://github.com/ronkrasn/secretshield` (Public)
 
 2. **Push your local commits**:
    ```bash
-   git remote add origin https://github.com/ronkrasnopolski/secretshield.git
+   git remote add origin https://github.com/ronkrasn/secretshield.git
    git branch -M main
    git push -u origin main
    ```
@@ -29,23 +29,23 @@ This document outlines the step-by-step process for making SecretShield public o
 
 1. **Create a new public repository on GitHub**:
    - Repository name: `homebrew-secretshield`
-   - URL: `https://github.com/ronkrasnopolski/homebrew-secretshield` (Public)
+   - URL: `https://github.com/ronkrasn/homebrew-secretshield` (Public)
 
 2. **Sync the Formula**:
    Run the automated sync script from the `secretshield` repository root:
    ```bash
-   ./scripts/publish-tap.sh ronkrasnopolski 0.1.0
+   ./scripts/publish-tap.sh ronkrasn 0.1.0
    ```
 
 3. **Verify Public Installation**:
    Any user anywhere in the world on macOS or Linux can now install SecretShield via:
    ```bash
-   brew tap ronkrasnopolski/secretshield
+   brew tap ronkrasn/secretshield
    brew install secretshield
    ```
    Or directly:
    ```bash
-   brew install https://raw.githubusercontent.com/ronkrasnopolski/secretshield/main/Formula/secretshield.rb
+   brew install https://raw.githubusercontent.com/ronkrasn/secretshield/main/Formula/secretshield.rb
    ```
 
 ---
@@ -62,6 +62,6 @@ Whenever you prepare a new version:
    ```
 3. Update the tap formula:
    ```bash
-   ./scripts/publish-tap.sh ronkrasnopolski 0.2.0
+   ./scripts/publish-tap.sh ronkrasn 0.2.0
    ```
    *(If GitHub Actions CI is configured with `HOMEBREW_TAP_TOKEN`, this step happens automatically).*
