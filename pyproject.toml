@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secretshield"
+version = "0.1.0"
+description = "Open-source Git hook and auto-remediation agent that detects hardcoded secrets and securely migrates them to Cloud Key Vaults (Google KMS/GSM, HashiCorp Vault, AWS, Azure)."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+authors = [
+    { name = "Ron Krasnopolski & Open Source Contributors" }
+]
+keywords = [
+    "security",
+    "git-hooks",
+    "secret-detection",
+    "secret-scanning",
+    "gitleaks",
+    "trufflehog",
+    "key-vault",
+    "google-cloud-kms",
+    "google-secret-manager",
+    "hashicorp-vault",
+    "aws-secrets-manager",
+    "azure-keyvault",
+    "devsecops"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Security",
+    "Topic :: Software Development :: Version Control :: Git",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+secretshield = "secretshield.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["secretshield*"]

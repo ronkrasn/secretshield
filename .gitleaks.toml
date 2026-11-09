@@ -1,0 +1,20 @@
+# Gitleaks Configuration for SecretShield
+title = "SecretShield Gitleaks Config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Global allowlists for SecretShield"
+paths = [
+  '''^\.secretshieldignore$''',
+  '''^tests/fixtures/''',
+  '''package-lock\.json$''',
+  '''pnpm-lock\.yaml$''',
+  '''yarn\.lock$'''
+]
+regexes = [
+  '''EXAMPLE_[A-Z0-9_]+''',
+  '''placeholder''',
+  '''your-api-key-here'''
+]
