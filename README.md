@@ -63,21 +63,34 @@ flowchart TD
 
 ## 🚀 Quickstart & Installation
 
-### Option 1: One-Line Install Script
+### Option 1: Install with Homebrew (Recommended for macOS & Linux)
 ```bash
-curl -sSL https://raw.githubusercontent.com/your-org/secretshield/main/install.sh | bash
+# Add Homebrew Tap and install
+brew tap ronkrasnopolski/secretshield
+brew install secretshield
+
+# Or install in a single command:
+brew install ronkrasnopolski/secretshield/secretshield
+
+# To install from local source formula:
+brew install --formula Formula/secretshield.rb
 ```
 
-### Option 2: Clone & Local Setup
+### Option 2: One-Line Install Script
 ```bash
-git clone https://github.com/your-org/secretshield.git
+curl -sSL https://raw.githubusercontent.com/ronkrasnopolski/secretshield/main/install.sh | bash
+```
+
+### Option 3: Clone & Local Setup
+```bash
+git clone https://github.com/ronkrasnopolski/secretshield.git
 cd secretshield
 
 # Run setup wizard in any repository:
 ./bin/secretshield setup
 ```
 
-### Option 3: Python Pip / Editable Install
+### Option 4: Python Pip / Editable Install
 ```bash
 pip install -e .
 

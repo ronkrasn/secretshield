@@ -40,7 +40,11 @@ mkdir -p "${BIN_DIR}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [ -f "${SCRIPT_DIR}/pyproject.toml" ]; then
+# If brew is installed and formula exists locally, prefer brew if requested
+if [ -f "${SCRIPT_DIR}/Formula/secretshield.rb" ] && command -v brew >/dev/null 2>&1 && [ "${USE_BREW:-0}" = "1" ]; then
+    echo -e "  Installing via Homebrew formula..."
+    brew install --build-from-source "${SCRIPT_DIR}/Formula/secretshield.rb"
+elif [ -f "${SCRIPT_DIR}/pyproject.toml" ]; then
     echo -e "  Installing from local source at ${SCRIPT_DIR}..."
     python3 -m pip install --quiet --upgrade pip || true
     python3 -m pip install --quiet -e "${SCRIPT_DIR}" || {
@@ -51,7 +55,7 @@ if [ -f "${SCRIPT_DIR}/pyproject.toml" ]; then
 else
     echo -e "  Cloning latest SecretShield repository to ${TARGET_DIR}..."
     rm -rf "${TARGET_DIR}"
-    git clone --depth 1 https://github.com/your-org/secretshield.git "${TARGET_DIR}"
+    git clone --depth 1 https://github.com/ronkrasnopolski/secretshield.git "${TARGET_DIR}"
     ln -sf "${TARGET_DIR}/bin/secretshield" "${BIN_DIR}/secretshield"
 fi
 

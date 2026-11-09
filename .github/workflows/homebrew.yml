@@ -1,0 +1,47 @@
+name: Homebrew Release & Formula Sync
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: true
+        default: "v0.1.0"
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Calculate Tarball SHA256 and Update Formula
+        run: |
+          VERSION="${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          VERSION="${VERSION#v}"
+          ./scripts/update-formula.sh "$VERSION" "${{ github.repository }}"
+
+      - name: Commit Formula Update
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(homebrew): bump formula to ${{ github.event.release.tag_name || github.event.inputs.tag }}"
+          file_pattern: "Formula/secretshield.rb"
+
+      - name: Sync to Homebrew Tap (Optional)
+        if: env.TAP_TOKEN != ''
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/${{ github.repository_owner }}/homebrew-secretshield.git" /tmp/tap || true
+          if [ -d "/tmp/tap" ]; then
+            mkdir -p /tmp/tap/Formula
+            cp Formula/secretshield.rb /tmp/tap/Formula/secretshield.rb
+            cd /tmp/tap
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add Formula/secretshield.rb
+            git commit -m "Update secretshield to ${{ github.event.release.tag_name || github.event.inputs.tag }}" || true
+            git push origin main || true
+          fi
