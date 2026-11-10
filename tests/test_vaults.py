@@ -135,6 +135,29 @@ class TestVaultProviders(unittest.TestCase):
         p_az = get_vault_provider(config=cfg_az)
         self.assertIsInstance(p_az, AzureKeyVaultProvider)
 
+    def test_vault_creation_commands(self):
+        cfg_gsm = ShieldConfig(vault_provider="google_secret_manager", vault_config={"project_id": "demo-proj"})
+        p_gsm = GoogleSecretManagerProvider(cfg_gsm)
+        cmd_gsm = p_gsm.get_creation_command("JWT_SECRET", "super-secret-val")
+        self.assertIn("gcloud secrets create JWT_SECRET", cmd_gsm)
+        self.assertIn("demo-proj", cmd_gsm)
+
+        cfg_aws = ShieldConfig(vault_provider="aws_secrets_manager", vault_config={"region": "eu-central-1"})
+        p_aws = AWSSecretsManagerProvider(cfg_aws)
+        cmd_aws = p_aws.get_creation_command("DB_PASS", "secret123")
+        self.assertIn("aws secretsmanager create-secret", cmd_aws)
+        self.assertIn("eu-central-1", cmd_aws)
+
+        cfg_vault = ShieldConfig(vault_provider="hashicorp_vault", vault_config={"mount_path": "prod-secrets"})
+        p_vault = HashiCorpVaultProvider(cfg_vault)
+        cmd_vault = p_vault.get_creation_command("API_TOKEN", "tok999")
+        self.assertIn("vault kv put prod-secrets/api-token", cmd_vault)
+
+        cfg_az = ShieldConfig(vault_provider="azure_keyvault", vault_config={"vault_name": "corp-kv"})
+        p_az = AzureKeyVaultProvider(cfg_az)
+        cmd_az = p_az.get_creation_command("AUTH_KEY", "xyz888")
+        self.assertIn("az keyvault secret set --vault-name \"corp-kv\"", cmd_az)
+
 
 if __name__ == "__main__":
     unittest.main()

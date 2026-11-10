@@ -64,6 +64,24 @@ class BaseVaultProvider(ABC):
         """Test authentication and connectivity to the vault service."""
         pass
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate shell/CLI command to store secret in this vault provider."""
+        norm_name = self.normalize_secret_name(secret_name)
+        return f"# Store '{norm_name}' in {self.display_name}"
+
+    def get_access_snippet(self, env_var_name: str, file_path: str = "") -> str:
+        """Generate code snippet showing how application code reads the secret at runtime."""
+        ext = Path(file_path).suffix.lower() if file_path else ""
+        if ext in (".ts", ".tsx", ".js", ".jsx", ".mjs"):
+            return f"process.env.{env_var_name}"
+        elif ext in (".py",):
+            return f'os.getenv("{env_var_name}", "")'
+        elif ext in (".go",):
+            return f'os.Getenv("{env_var_name}")'
+        elif ext in (".sh", ".bash", ".zsh"):
+            return f'"${{{env_var_name}:-}}"'
+        return f"${{{env_var_name}}}"
+
     def normalize_secret_name(self, raw_hint: str, file_path: str = "") -> str:
         """
         Produce a clean, alphanumeric/kebab/underscore secret identifier.

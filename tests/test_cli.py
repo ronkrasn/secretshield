@@ -28,6 +28,16 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(args.command, "install-hooks")
         self.assertTrue(args.githooks_dir)
 
+        args = parser.parse_args(["remediate", "--all", "--vault", "aws_secrets_manager", "--export-script", "migrate.sh"])
+        self.assertEqual(args.command, "remediate")
+        self.assertTrue(args.all)
+        self.assertEqual(args.vault, "aws_secrets_manager")
+        self.assertEqual(args.export_script, "migrate.sh")
+
+        args = parser.parse_args(["scan", "--suggest"])
+        self.assertEqual(args.command, "scan")
+        self.assertTrue(args.suggest)
+
     def test_format_findings_table(self):
         # Empty findings
         empty_msg = format_findings_table([])

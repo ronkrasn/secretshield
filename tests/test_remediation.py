@@ -134,6 +134,52 @@ class TestRemediation(unittest.TestCase):
             self.assertIn('API_KEY = os.getenv("GOOGLE_API_KEY", "")', new_content)
             self.assertNotIn("AIzaSyD-8472948294729482947294829482948294", new_content)
 
+    def test_remediation_suggestion_and_script(self):
+        from secretshield.config import ShieldConfig
+        from secretshield.vault import get_vault_provider
+        from secretshield.remediation.engine import (
+            format_all_suggestions,
+            format_remediation_suggestion,
+            generate_remediation_script,
+        )
+
+        config = ShieldConfig(vault_provider="google_secret_manager")
+        config.vault_config["project_id"] = "test-project"
+        provider = get_vault_provider("google_secret_manager", config)
+
+        finding = Finding(
+            rule_id="stripe_secret_key",
+            file_path="services/billing.ts",
+            line_number=5,
+            line_content='const key = "sk_live_1234567890abcdef";',
+            secret_raw="sk_live_1234567890abcdef",
+            masked_secret="sk_live_*****",
+            hint="STRIPE_SECRET_KEY",
+        )
+
+        plan = create_remediation_plan(
+            finding=finding,
+            vault_provider=provider,
+        )
+
+        self.assertIn("gcloud secrets create STRIPE_SECRET_KEY", plan.vault_command)
+        self.assertIn("test-project", plan.vault_command)
+        self.assertEqual(plan.access_snippet, "process.env.STRIPE_SECRET_KEY")
+
+        suggestion = format_remediation_suggestion(plan)
+        self.assertIn("STRIPE_SECRET_KEY", suggestion)
+        self.assertIn("gcloud secrets", suggestion)
+        self.assertIn("- const key =", suggestion)
+        self.assertIn("+ const key =", suggestion)
+
+        all_sugg = format_all_suggestions([plan])
+        self.assertIn("REMEDIATION PLAYBOOK", all_sugg)
+
+        script = generate_remediation_script([plan], "Google Cloud Secret Manager")
+        self.assertIn("#!/usr/bin/env bash", script)
+        self.assertIn("gcloud secrets create STRIPE_SECRET_KEY", script)
+
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -75,6 +75,13 @@ class AzureKeyVaultProvider(BaseVaultProvider):
         clean = re.sub(r"-+", "-", clean).strip("-")
         return clean[:127] or "app-secret"
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate Azure CLI command to store secret in Azure Key Vault."""
+        norm_name = self.normalize_secret_name(secret_name)
+        val_escaped = secret_value.replace('"', '\\"')
+        vault_name = self.vault_name or "<VAULT_NAME>"
+        return f"az keyvault secret set --vault-name \"{vault_name}\" --name \"{norm_name}\" --value \"{val_escaped}\""
+
     def store_secret(
         self,
         secret_name: str,

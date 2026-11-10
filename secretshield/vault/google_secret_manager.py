@@ -72,6 +72,16 @@ class GoogleSecretManagerProvider(BaseVaultProvider):
         # GSM accepts both, uppercase underscores is standard for env vars.
         return name[:255]
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate gcloud CLI commands to create and set secret in Google Cloud Secret Manager."""
+        norm_name = self.normalize_secret_name(secret_name)
+        project_flag = f" --project={self.project_id}" if self.project_id else ""
+        val_escaped = secret_value.replace('"', '\\"')
+        return (
+            f"gcloud secrets create {norm_name}{project_flag} --replication-policy=\"automatic\" 2>/dev/null || true\n"
+            f"echo -n \"{val_escaped}\" | gcloud secrets versions add {norm_name}{project_flag} --data-file=-"
+        )
+
     def _secret_exists(self, secret_name: str) -> bool:
         cmd = [
             "gcloud",

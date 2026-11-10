@@ -19,6 +19,7 @@ build/
 .vault-token
 *.pem
 *.key
+.secretshield.json
 
 # IDE and OS
 .DS_Store

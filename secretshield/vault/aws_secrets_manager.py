@@ -64,6 +64,15 @@ class AWSSecretsManagerProvider(BaseVaultProvider):
         except Exception as e:
             return False, f"Error testing AWS Secrets Manager connection: {e}"
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate AWS CLI command to create or update secret in AWS Secrets Manager."""
+        norm_name = self.normalize_secret_name(secret_name)
+        val_escaped = secret_value.replace('"', '\\"')
+        return (
+            f"aws secretsmanager create-secret --name \"{norm_name}\" --secret-string \"{val_escaped}\" --region {self.region} 2>/dev/null || \\\n"
+            f"aws secretsmanager put-secret-value --secret-id \"{norm_name}\" --secret-string \"{val_escaped}\" --region {self.region}"
+        )
+
     def store_secret(
         self,
         secret_name: str,

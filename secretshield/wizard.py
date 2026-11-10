@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional
 
 from secretshield.config import (
     ShieldConfig,
+    ensure_gitignored,
     get_default_aws_region,
     get_default_gcp_project,
     save_config,
@@ -197,6 +198,10 @@ Git hooks, and cloud key vault integrations (Google KMS/GSM, AWS, Azure, HashiCo
     # 6. Save configuration to .secretshield.json
     cfg_path = save_config(config, root / ".secretshield.json")
     print(f"\n  {GREEN}✔ Configuration saved to {cfg_path}{RESET}")
+
+    # Ensure .secretshield.json is added to .gitignore
+    if ensure_gitignored(root, ".secretshield.json", comment="SecretShield local configuration"):
+        print(f"  {GREEN}✔ Added .secretshield.json to .gitignore{RESET}")
 
     # Ensure .secretshieldignore exists
     ignore_path = root / ".secretshieldignore"

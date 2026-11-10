@@ -31,9 +31,20 @@ DEFAULT_IGNORE_PATTERNS = [
     "go.sum",
     "go.work.sum",
     ".git/*",
+    ".git/**",
+    "*/.git/*",
+    "*worktrees*",
+    "*/worktrees/*",
+    "*/.worktrees/*",
     ".gitignore",
     "node_modules/*",
     "vendor/*",
+    ".venv/*",
+    "venv/*",
+    "env/*",
+    "*.venv/*",
+    "*site-packages*",
+    "*/site-packages/*",
     "dist/*",
     "build/*",
     "tmp/*",
@@ -269,6 +280,31 @@ def get_default_gcp_project() -> Optional[str]:
 def get_default_aws_region() -> str:
     """Detect default AWS region from environment."""
     return os.environ.get("AWS_DEFAULT_REGION") or os.environ.get("AWS_REGION") or "us-east-1"
+
+
+def ensure_gitignored(repo_root: Path, pattern: str, comment: Optional[str] = None) -> bool:
+    """Ensure a file pattern is listed in repo_root/.gitignore.
+
+    Returns True if pattern was newly appended, False if already present or on error.
+    """
+    gitignore_path = repo_root / ".gitignore"
+    try:
+        content = ""
+        if gitignore_path.exists():
+            content = gitignore_path.read_text(encoding="utf-8")
+            lines = [line.strip() for line in content.splitlines()]
+            if pattern in lines or f"/{pattern}" in lines or f"*{pattern}*" in lines:
+                return False
+
+        prefix = "\n" if content and not content.endswith("\n") else ""
+        with open(gitignore_path, "a", encoding="utf-8") as f:
+            if comment:
+                f.write(f"{prefix}# {comment}\n{pattern}\n")
+            else:
+                f.write(f"{prefix}{pattern}\n")
+        return True
+    except Exception:
+        return False
 
 
 def load_ignore_patterns(repo_root: Path) -> List[str]:

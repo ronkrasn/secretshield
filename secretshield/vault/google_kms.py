@@ -27,6 +27,15 @@ class GoogleKMSProvider(BaseVaultProvider):
         self.keyring = self.vault_config.get("keyring", "secretshield-ring")
         self.key = self.vault_config.get("key", "secretshield-key")
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate gcloud KMS CLI command to encrypt secret."""
+        val_escaped = secret_value.replace('"', '\\"')
+        return (
+            f"echo -n \"{val_escaped}\" | gcloud kms encrypt "
+            f"--location=\"{self.location}\" --keyring=\"{self.keyring}\" --key=\"{self.key_name}\" "
+            f"--plaintext-file=- --ciphertext-file=- | base64"
+        )
+
     def is_available(self) -> Tuple[bool, str]:
         gcloud_bin = shutil.which("gcloud")
         if not gcloud_bin:

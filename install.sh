@@ -68,6 +68,16 @@ fi
 
 echo -e "\n${GREEN}${BOLD}✔ SecretShield installed successfully!${RESET}\n"
 
+# Ensure .secretshield.json is added to .gitignore if in a git repository
+if [ -d ".git" ] || [ -f ".gitignore" ]; then
+    if [ -f ".gitignore" ]; then
+        if ! grep -qs '^\.secretshield\.json' .gitignore && ! grep -qs '^/\.secretshield\.json' .gitignore; then
+            echo -e "\n# SecretShield local configuration\n.secretshield.json" >> .gitignore
+            echo -e "  ${GREEN}✔ Added .secretshield.json to .gitignore${RESET}"
+        fi
+    fi
+fi
+
 # Run setup wizard if interactive terminal
 if [ -t 0 ]; then
     echo -e "Launching interactive setup wizard..."

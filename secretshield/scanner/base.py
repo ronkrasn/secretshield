@@ -173,6 +173,10 @@ class BaseScanner(ABC):
 
         if "__pycache__" in norm_path or norm_path.endswith(".pyc"):
             return True
+        if "site-packages" in norm_path or "/.venv/" in norm_path or "/venv/" in norm_path or norm_path.startswith(".venv/") or norm_path.startswith("venv/"):
+            return True
+        if "/.git/" in norm_path or norm_path.startswith(".git/") or "worktrees" in norm_path:
+            return True
 
         for pattern in self.config.ignore_patterns:
             pat = pattern.rstrip("/")

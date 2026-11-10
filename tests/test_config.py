@@ -7,6 +7,7 @@ import unittest
 
 from secretshield.config import (
     ShieldConfig,
+    ensure_gitignored,
     load_config,
     load_ignore_patterns,
     save_config,
@@ -63,6 +64,39 @@ class TestConfig(unittest.TestCase):
             self.assertIn("*.lock", patterns)
             self.assertIn("tests/fixtures/secret.py", patterns)
             self.assertNotIn("# comments to ignore", patterns)
+
+    def test_ensure_gitignored_new_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            gitignore = root / ".gitignore"
+            self.assertFalse(gitignore.exists())
+
+            # Add .secretshield.json
+            res = ensure_gitignored(root, ".secretshield.json", comment="SecretShield config")
+            self.assertTrue(res)
+            self.assertTrue(gitignore.exists())
+
+            content = gitignore.read_text(encoding="utf-8")
+            self.assertIn(".secretshield.json", content)
+            self.assertIn("# SecretShield config", content)
+
+            # Second call should return False (already present) and not duplicate
+            res2 = ensure_gitignored(root, ".secretshield.json")
+            self.assertFalse(res2)
+            self.assertEqual(content.count(".secretshield.json"), 1)
+
+    def test_ensure_gitignored_existing_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            gitignore = root / ".gitignore"
+            gitignore.write_text("node_modules/\n.env\n", encoding="utf-8")
+
+            res = ensure_gitignored(root, ".secretshield.json")
+            self.assertTrue(res)
+
+            content = gitignore.read_text(encoding="utf-8")
+            self.assertTrue(content.startswith("node_modules/\n.env\n"))
+            self.assertIn(".secretshield.json", content)
 
 
 if __name__ == "__main__":

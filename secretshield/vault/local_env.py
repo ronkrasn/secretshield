@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 from typing import Any, Dict, Optional, Tuple
 
-from secretshield.config import ShieldConfig
+from secretshield.config import ShieldConfig, ensure_gitignored
 from secretshield.vault.base import BaseVaultProvider, VaultResult
 
 
@@ -21,6 +21,12 @@ class LocalEnvProvider(BaseVaultProvider):
         super().__init__(config, repo_root)
         self.target_file = self.vault_config.get("target_file", ".env.staging")
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate shell command to store secret in local uncommitted .env file."""
+        env_var = self.normalize_env_var_name(secret_name)
+        val_escaped = secret_value.replace('"', '\\"')
+        return f"echo '{env_var}=\"{val_escaped}\"' >> {self.target_file}"
+
     def is_available(self) -> Tuple[bool, str]:
         return True, f"Local env file provider ready (Target: {self.target_file})"
 
@@ -35,20 +41,7 @@ class LocalEnvProvider(BaseVaultProvider):
 
     def _ensure_gitignored(self, filename: str) -> None:
         """Ensure the secret file is listed in .gitignore."""
-        gitignore_path = self.repo_root / ".gitignore"
-        try:
-            content = ""
-            if gitignore_path.exists():
-                content = gitignore_path.read_text(encoding="utf-8")
-                lines = [line.strip() for line in content.splitlines()]
-                if filename in lines or f"/{filename}" in lines or f"*{filename}*" in lines:
-                    return
-
-            prefix = "\n" if content and not content.endswith("\n") else ""
-            with open(gitignore_path, "a", encoding="utf-8") as f:
-                f.write(f"{prefix}# SecretShield local secrets file\n{filename}\n")
-        except Exception:
-            pass
+        ensure_gitignored(self.repo_root, filename, comment="SecretShield local secrets file")
 
     def store_secret(
         self,

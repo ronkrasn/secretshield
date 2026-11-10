@@ -48,6 +48,12 @@ class HashiCorpVaultProvider(BaseVaultProvider):
         name = super().normalize_secret_name(raw_hint, file_path)
         return name.lower().replace("_", "-")
 
+    def get_creation_command(self, secret_name: str, secret_value: str) -> str:
+        """Generate Vault CLI command to store secret in HashiCorp Vault KV."""
+        norm_name = self.normalize_secret_name(secret_name).lower().replace("_", "-")
+        val_escaped = secret_value.replace('"', '\\"')
+        return f"vault kv put {self.mount_path}/{norm_name} value=\"{val_escaped}\""
+
     def is_available(self) -> Tuple[bool, str]:
         if shutil.which("vault"):
             return True, f"HashiCorp Vault CLI found (Address: {self.vault_addr})"

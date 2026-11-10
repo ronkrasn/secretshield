@@ -11,6 +11,12 @@ from secretshield.config import ShieldConfig, load_config
 from secretshield.hooks.installer import install_git_hooks
 from secretshield.hooks.pre_commit import run_pre_commit_hook
 from secretshield.hooks.pre_push import run_pre_push_hook
+from secretshield.remediation.engine import (
+    create_remediation_plan,
+    format_all_suggestions,
+    format_remediation_suggestion,
+    generate_remediation_script,
+)
 from secretshield.remediation.interactive import run_interactive_remediation
 from secretshield.scanner import get_scanner
 from secretshield.scanner.base import Finding
@@ -48,34 +54,37 @@ def format_findings_table(findings: List[Finding]) -> str:
     return "\n".join(lines)
 
 
+def _collect_findings(args: argparse.Namespace, scanner, repo_root: Path) -> List[Finding]:
+    """Helper to collect findings based on CLI arguments."""
+    if getattr(args, "staged", False):
+        return scanner.scan_staged()
+    elif getattr(args, "path", None):
+        target = Path(args.path)
+        if target.is_file():
+            return scanner.scan_file(target)
+        else:
+            return scanner.scan_directory(target)
+    elif getattr(args, "all", False):
+        return scanner.scan_directory(repo_root)
+    else:
+        # Default: scan staged if in git repo, else current dir
+        if (repo_root / ".git").exists():
+            return scanner.scan_staged()
+        else:
+            return scanner.scan_directory(repo_root)
+
+
 def cmd_scan(args: argparse.Namespace, repo_root: Path) -> int:
     """Execute scan command."""
     config = load_config(repo_root / ".secretshield.json")
 
-    if args.vault:
+    if getattr(args, "vault", None):
         config.vault_provider = args.vault
 
     scanner = get_scanner(config=config, repo_root=repo_root)
+    findings = _collect_findings(args, scanner, repo_root)
 
-    findings: List[Finding] = []
-    if args.staged:
-        findings = scanner.scan_staged()
-    elif args.path:
-        target = Path(args.path)
-        if target.is_file():
-            findings = scanner.scan_file(target)
-        else:
-            findings = scanner.scan_directory(target)
-    elif args.all:
-        findings = scanner.scan_directory(repo_root)
-    else:
-        # Default: scan staged if in git repo, else current dir
-        if (repo_root / ".git").exists():
-            findings = scanner.scan_staged()
-        else:
-            findings = scanner.scan_directory(repo_root)
-
-    if args.json:
+    if getattr(args, "json", False):
         print(json.dumps([f.to_dict() for f in findings], indent=2))
         return 0 if not findings else 1
 
@@ -84,9 +93,33 @@ def cmd_scan(args: argparse.Namespace, repo_root: Path) -> int:
     if not findings:
         return 0
 
+    vault_provider = get_vault_provider(config.vault_provider, config, repo_root)
+
+    # Suggestion mode
+    if getattr(args, "suggest", False):
+        plans = [
+            create_remediation_plan(
+                finding=f,
+                vault_provider=vault_provider,
+                use_vault_uri=config.use_vault_uri_in_code,
+                repo_root=repo_root,
+            )
+            for f in findings
+        ]
+        print(format_all_suggestions(plans, vault_provider.display_name))
+
+        if getattr(args, "export_script", None):
+            export_path = Path(args.export_script)
+            script_content = generate_remediation_script(plans, vault_provider.display_name)
+            export_path.write_text(script_content, encoding="utf-8")
+            export_path.chmod(export_path.stat().st_mode | 0o755)
+            print(f"\n{GREEN}✔ Exported vault remediation script to: {export_path}{RESET}")
+
+        return 1
+
     # Auto-remediation or interactive remediation if requested
-    if args.auto_remediate or args.interactive:
-        auto_accept = bool(args.auto_remediate)
+    if getattr(args, "auto_remediate", False) or getattr(args, "interactive", False):
+        auto_accept = bool(getattr(args, "auto_remediate", False))
         ok, plans = run_interactive_remediation(
             findings=findings,
             config=config,
@@ -96,6 +129,65 @@ def cmd_scan(args: argparse.Namespace, repo_root: Path) -> int:
         return 0 if ok else 1
 
     return 1
+
+
+def cmd_remediate(args: argparse.Namespace, repo_root: Path) -> int:
+    """Execute remediation guide or automated remediation command."""
+    config = load_config(repo_root / ".secretshield.json")
+
+    if getattr(args, "vault", None):
+        config.vault_provider = args.vault
+
+    scanner = get_scanner(config=config, repo_root=repo_root)
+    findings = _collect_findings(args, scanner, repo_root)
+
+    if not findings:
+        print(f"\n{GREEN}✔ No exposed secrets detected to remediate!{RESET}\n")
+        return 0
+
+    vault_provider = get_vault_provider(config.vault_provider, config, repo_root)
+    plans = [
+        create_remediation_plan(
+            finding=f,
+            vault_provider=vault_provider,
+            use_vault_uri=config.use_vault_uri_in_code,
+            repo_root=repo_root,
+        )
+        for f in findings
+    ]
+
+    # If --apply or --auto: apply directly
+    if getattr(args, "apply", False) or getattr(args, "auto", False):
+        ok, executed_plans = run_interactive_remediation(
+            findings=findings,
+            config=config,
+            repo_root=repo_root,
+            auto_accept=True,
+        )
+        return 0 if ok else 1
+
+    # If --interactive:
+    if getattr(args, "interactive", False):
+        ok, executed_plans = run_interactive_remediation(
+            findings=findings,
+            config=config,
+            repo_root=repo_root,
+            auto_accept=False,
+        )
+        return 0 if ok else 1
+
+    # Default: Show full remediation playbook (vault CLI commands + code changes)
+    print(format_findings_table(findings))
+    print(format_all_suggestions(plans, vault_provider.display_name))
+
+    if getattr(args, "export_script", None):
+        export_path = Path(args.export_script)
+        script_content = generate_remediation_script(plans, vault_provider.display_name)
+        export_path.write_text(script_content, encoding="utf-8")
+        export_path.chmod(export_path.stat().st_mode | 0o755)
+        print(f"\n{GREEN}✔ Exported vault remediation script to: {export_path}{RESET}\n")
+
+    return 0
 
 
 def cmd_test_vault(args: argparse.Namespace, repo_root: Path) -> int:
@@ -155,9 +247,25 @@ def build_parser() -> argparse.ArgumentParser:
     scan_parser.add_argument("--all", action="store_true", help="Scan entire repository")
     scan_parser.add_argument("--path", type=str, help="Scan a specific file or directory path")
     scan_parser.add_argument("--json", action="store_true", help="Output results in JSON format")
+    scan_parser.add_argument("--suggest", action="store_true", help="Output remediation suggestions (vault commands & code changes)")
+    scan_parser.add_argument("--export-script", type=str, help="Export vault creation commands to a runnable shell script")
     scan_parser.add_argument("--auto-remediate", action="store_true", help="Automatically migrate detected secrets to key vault")
     scan_parser.add_argument("--interactive", action="store_true", help="Run interactive remediation agent")
     scan_parser.add_argument("--vault", type=str, help="Override key vault provider for remediation")
+
+    # remediate / suggest
+    remediate_parser = subparsers.add_parser(
+        "remediate",
+        aliases=["suggest"],
+        help="Generate vault creation commands and codebase diffs to secure detected secrets",
+    )
+    remediate_parser.add_argument("--staged", action="store_true", help="Remediate git staged changes only")
+    remediate_parser.add_argument("--all", action="store_true", help="Remediate entire repository")
+    remediate_parser.add_argument("--path", type=str, help="Remediate a specific file or directory path")
+    remediate_parser.add_argument("--vault", type=str, help="Target key vault provider (e.g. google_secret_manager, aws_secrets_manager, hashicorp_vault, azure_keyvault, local_env)")
+    remediate_parser.add_argument("--export-script", type=str, help="Export vault creation CLI commands to a runnable script")
+    remediate_parser.add_argument("--apply", "--auto", dest="apply", action="store_true", help="Automatically provision to vault and apply code changes")
+    remediate_parser.add_argument("--interactive", action="store_true", help="Run interactive remediation wizard")
 
     # test-vault
     tv_parser = subparsers.add_parser("test-vault", help="Test connection to configured key vault provider")
@@ -193,6 +301,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     if args.command == "scan":
         return cmd_scan(args, repo_root)
+
+    if args.command in ("remediate", "suggest"):
+        return cmd_remediate(args, repo_root)
 
     if args.command == "test-vault":
         return cmd_test_vault(args, repo_root)
